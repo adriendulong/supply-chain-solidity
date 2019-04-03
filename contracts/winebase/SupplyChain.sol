@@ -143,7 +143,7 @@ contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole 
 
   // Define a modifier that checks if an wine.state of a upc is Purchased
   modifier purchased(uint _upc) {
-    require(wines[_upc].wineState == State.Made, "SupplyChain::purchased - this wine has not the Purchased state");
+    require(wines[_upc].wineState == State.Purchased, "SupplyChain::purchased - this wine has not the Purchased state");
     _;
   }
 
@@ -270,9 +270,9 @@ contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole 
   }
 
 
-  // Define a function 'onPurchaseWine' that allows the retailer to mark an item 'ForPurchase'
+  // Define a function 'setOnPurchaseWine' that allows the retailer to mark an item 'ForPurchase'
   // Use the above modifiers to check if the item is shipped
-  function onPurchaseWine(uint _upc, uint _price) public shipped(_upc) verifyCaller(wines[_upc].wineMerchantID) {
+  function setOnPurchaseWine(uint _upc, uint _price) public received(_upc) verifyCaller(wines[_upc].wineMerchantID) {
     wines[_upc].wineState = State.ForPurchase;
     wines[_upc].productFinalPrice = _price;
     
@@ -280,16 +280,25 @@ contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole 
     emit ForPurchase(_upc);
   }
 
-  // Define a function 'purchaseItem' that allows the consumer to mark an item 'Purchased'
-  // Use the above modifiers to check if the item is received
-  function purchaseItem(uint _upc) public payable forPurchase(_upc) paidEnough(wines[_upc].productFinalPrice) checkValue(wines[_upc].productFinalPrice) onlyConsumer whenNotPaused {
+  // Define a function 'purchaseWine' that allows the consumer to mark an item 'Purchased'
+  function purchaseWine(uint _upc) public payable forPurchase(_upc) paidEnough(wines[_upc].productFinalPrice) checkValue(wines[_upc].productFinalPrice) onlyConsumer whenNotPaused {
     // Update the appropriate fields - ownerID, consumerID, wineState
     wines[_upc].wineState = State.Purchased;
     wines[_upc].consumerID = msg.sender;
     wines[_upc].ownerID = msg.sender;
+    wines[_upc].wineMerchantID.transfer(wines[_upc].productFinalPrice);
     
     // Emit the appropriate event
     emit Purchased(_upc);
+  }
+
+  // Define a function 'purchaseWine' that allows the consumer to mark an item 'Purchased'
+  function drinkWine(uint _upc) public purchased(_upc) verifyCaller(wines[_upc].consumerID) {
+    // Update the appropriate fields - ownerID, consumerID, wineState
+    wines[_upc].wineState = State.Drunk;
+
+    // Emit the appropriate event
+    emit Drunk(_upc);
   }
 
   // Define a function 'fetchWineBufferOne' that fetches the data
