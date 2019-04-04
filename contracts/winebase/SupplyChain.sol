@@ -76,7 +76,7 @@ contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole 
 
   // Define a modifier that checks if the paid amount is sufficient to cover the price
   modifier paidEnough(uint _price) { 
-    require(msg.value >= _price); 
+    require(msg.value >= _price, "SupplyChain::paidEnough - Not enough fund"); 
     _;
   }
   

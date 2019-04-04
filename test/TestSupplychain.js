@@ -63,6 +63,17 @@ contract('SupplyChain', accounts => {
         assert.equal(resultBufferOne[6], originWinemakerLatitude, 'Error: Missing or Invalid originWinemakerLatitude')
         assert.equal(resultBufferOne[7], originWinemakerLongitude, 'Error: Missing or Invalid originWinemakerLongitude')
         assert.equal(resultBufferTwo.wineState, 0, 'Error: Invalid item State')      
+    }) 
+    
+    // FAIL TEST FUNCTION
+    it("Check that the function makeWine() fails when call by a user who is not a winemaker", async() => {
+        const supplyChain = await SupplyChain.deployed()
+        
+        await truffleAssert.fails(
+            supplyChain.makeWine(upc, originWinemakerName, originWinemakerInformation, originWinemakerLatitude, originWinemakerLongitude, productNotes, {from: consumerID}),
+            truffleAssert.ErrorType.REVERT,
+            "WinemakerRole::onlyWinemaker - You need the winemaker role to do this action"
+        );
     })    
 
     // 2nd Test
@@ -140,6 +151,19 @@ contract('SupplyChain', accounts => {
         assert.equal(resultFetch.productPrice.toString(), price, 'Error: Missing or Invalid price');
         
     }) 
+
+    // FAIL TEST FUNCTION
+    it("Check that we are not able to buy the wine if not enough fund", async() => {
+        const supplyChain = await SupplyChain.deployed();
+
+        const amount = web3.utils.toWei("0.1", "ether");
+        
+        await truffleAssert.fails(
+            supplyChain.buyWine(upc, {from: wineMerchantID, value: amount}),
+            truffleAssert.ErrorType.REVERT,
+            "SupplyChain::paidEnough - Not enough fund"
+        );
+    }) 
     
     // 6th Test
     it("Testing smart contract function buyWine() that allows a wine marchant to buy the wine", async() => {
@@ -152,7 +176,7 @@ contract('SupplyChain', accounts => {
         const winemakerBalanceBefore = await web3.eth.getBalance(accounts[1]);
         const awaitedWinemakerBalance = new BN(winemakerBalanceBefore).add(new BN(price)).toString();
         
-        let result = await supplyChain.buyWine(upc, {from: accounts[2], value: amount});
+        let result = await supplyChain.buyWine(upc, {from: wineMerchantID, value: amount});
         
         // Watch the emitted event Sold
         truffleAssert.eventEmitted(result, 'Sold');
@@ -208,6 +232,19 @@ contract('SupplyChain', accounts => {
           
     }) 
 
+    // FAIL TEST FUNCTION
+    it("Check that we are not able to purchase the wine if it is not available for purchase", async() => {
+        const supplyChain = await SupplyChain.deployed();
+
+        const amount = web3.utils.toWei("0.1", "ether");
+        
+        await truffleAssert.fails(
+            supplyChain.purchaseWine(upc, {from: consumerID, value: amount}),
+            truffleAssert.ErrorType.REVERT,
+            "SupplyChain::forPurchase - this wine has not the ForPurchase state"
+        );
+    })
+
     // 9th Test
     it("Testing smart contract function setOnPurchaseWine() that allows a wine merchant to set a wine ForPurchase", async() => {
         const supplyChain = await SupplyChain.deployed()
@@ -226,6 +263,19 @@ contract('SupplyChain', accounts => {
         assert.equal(resultFetch.wineState.toNumber(), 8, 'Error: Missing or Invalid state');
         assert.equal(resultFetch.productFinalPrice.toString(), price, 'Error: Missing or Invalid productFinalPrice');
         
+    }) 
+
+     // FAIL TEST FUNCTION
+     it("Check that we are not able to purchase the wine if not enough fund", async() => {
+        const supplyChain = await SupplyChain.deployed();
+
+        const amount = web3.utils.toWei("0.1", "ether");
+        
+        await truffleAssert.fails(
+            supplyChain.purchaseWine(upc, {from: consumerID, value: amount}),
+            truffleAssert.ErrorType.REVERT,
+            "SupplyChain::paidEnough - Not enough fund"
+        );
     }) 
 
     // 10th Test
@@ -275,90 +325,5 @@ contract('SupplyChain', accounts => {
         assert.equal(resultFetch.wineState.toNumber(), 10, 'Error: Missing or Invalid state');
           
     }) 
-
-    
-
-    // 6th Test
-    it("Testing smart contract function shipItem() that allows a distributor to ship coffee", async() => {
-        const supplyChain = await SupplyChain.deployed()
-        
-        // Declare and Initialize a variable for event
-        
-        
-        // Watch the emitted event Shipped()
-        
-
-        // Mark an item as Sold by calling function buyItem()
-        
-
-        // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
-
-        // Verify the result set
-              
-    })    
-
-    // 7th Test
-    it("Testing smart contract function receiveItem() that allows a retailer to mark coffee received", async() => {
-        const supplyChain = await SupplyChain.deployed()
-        
-        // Declare and Initialize a variable for event
-        
-        
-        // Watch the emitted event Received()
-        
-
-        // Mark an item as Sold by calling function buyItem()
-        
-
-        // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
-
-        // Verify the result set
-             
-    })    
-
-    // 8th Test
-    it("Testing smart contract function purchaseItem() that allows a consumer to purchase coffee", async() => {
-        const supplyChain = await SupplyChain.deployed()
-        
-        // Declare and Initialize a variable for event
-        
-        
-        // Watch the emitted event Purchased()
-        
-
-        // Mark an item as Sold by calling function buyItem()
-        
-
-        // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
-
-        // Verify the result set
-        
-    })    
-
-    // 9th Test
-    it("Testing smart contract function fetchItemBufferOne() that allows anyone to fetch item details from blockchain", async() => {
-        const supplyChain = await SupplyChain.deployed()
-
-        // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
-        
-        // Verify the result set:
-        
-    })
-
-    // 10th Test
-    it("Testing smart contract function fetchItemBufferTwo() that allows anyone to fetch item details from blockchain", async() => {
-        const supplyChain = await SupplyChain.deployed()
-
-        // Retrieve the just now saved item from blockchain by calling function fetchItem()
-        
-        
-        // Verify the result set:
-        
-    })
-
 });
 
