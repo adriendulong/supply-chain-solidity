@@ -35,6 +35,26 @@ contract('SupplyChain', accounts => {
         await supplyChain.addConsumer(consumerID);
     });
 
+    // FAIL TEST FUNCTION
+    // Pause the contract and check we are not able to do something
+    it("Check that we are not able to make a new wine when the contract is paused", async() => {
+        const supplyChain = await SupplyChain.deployed();
+
+        // Pause the contract
+        await supplyChain.pause({from: ownerID});
+        
+        // Check that we are not able to create a new wine when the contract is paused
+        await truffleAssert.fails(
+            supplyChain.makeWine(upc, originWinemakerName, originWinemakerInformation, originWinemakerLatitude, originWinemakerLongitude, productNotes, {from: originWinemakerID}),
+            truffleAssert.ErrorType.REVERT,
+            "Pausable::whenNotPaused - The contract is paused, impossible to perform this action right now"
+        );
+
+        // Unpause the contract
+        await supplyChain.unpause({from: ownerID});
+
+    }) 
+
     
     // 1st Test
     it("Testing smart contract function makeWine() that allows a winemaker to make a wine", async() => {

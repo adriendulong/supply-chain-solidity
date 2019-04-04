@@ -4,9 +4,12 @@ import "../wineaccesscontrol/ConsumerRole.sol";
 import "../wineaccesscontrol/WinemakerRole.sol";
 import "../wineaccesscontrol/WineMerchantRole.sol";
 import "../winecore/Pausable.sol";
+import "../utils/SafeMath.sol";
 
 // Define a contract 'Supplychain'
 contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole {
+  using SafeMath for uint256;
+
   // Define a variable called 'sku' for Stock Keeping Unit (SKU)
   uint  sku;
 
@@ -83,7 +86,7 @@ contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole 
   // Define a modifier that checks the price and refunds the remaining balance
   modifier checkValue(uint price) {
     _;
-    uint amountToReturn = msg.value - price;
+    uint amountToReturn = msg.value.sub(price);
     msg.sender.transfer(amountToReturn);
   }
 
@@ -175,7 +178,7 @@ contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole 
       originWinemakerInformation: _originWinemakerInformation,
       originWinemakerLatitude: _originWinemakerLatitude,
       originWinemakerLongitude: _origineWinemakerLongitude,
-      productID: (sku + _upc),
+      productID: sku.add(_upc),
       productNotes: _productNotes,
       productPrice: 0,
       productFinalPrice: 0,
@@ -185,7 +188,7 @@ contract SupplyChain is Pausable, ConsumerRole, WinemakerRole, WineMerchantRole 
     });
     
     // Increment sku
-    sku = sku + 1;
+    sku = sku.add(1);
 
     // Emit the Made event
     emit Made(_upc);
